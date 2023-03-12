@@ -1,6 +1,7 @@
 import pytest
 import unittest
 from unittest.mock import patch, mock_open
+from os import stat_result
 from pathlib import Path
 import builtins
 from keiconf import KeiConf
@@ -64,16 +65,21 @@ class TestKeiConf(unittest.TestCase):
         with pytest.raises(IsADirectoryError):
             k = KeiConf(filepath=self.file_content_mock)
     
+    @patch('keiconf.Path.lstat')
     @patch('keiconf.Path.is_dir')
     @patch('keiconf.Path.is_file')
     @patch('keiconf.Path.mkdir', autospec=True)
     @patch('keiconf.Path.write_text')
     def test_create_config_if_not_exist(self, mock_write_text, \
                                         mock_mkdir, mock_is_file, \
-                                        mock_is_dir):
+                                        mock_is_dir, mock_stat):
 
         mock_is_dir.return_value = False
         mock_is_file.return_value = False
+
+        # The 10 elements always present are st_mode, st_ino, st_dev, st_nlink, st_uid, st_gid, st_size, st_atime, st_mtime, st_ctime.        
+        # a modified st_mtime = stat_result([0, 0, 0, 0, 0, 0, 0, 0, X, 0])
+        mock_stat.return_value = stat_result([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         
         with patch("keiconf.open", mock_open(read_data=self.file_content_mock)) as mock_file:
             k = KeiConf(filepath=self.file_path_mock, create_if_not_exist=True)

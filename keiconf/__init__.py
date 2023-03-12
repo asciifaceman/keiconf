@@ -1,9 +1,8 @@
 # SPDX-FileCopyrightText: 2023-present Charles C. <nafredy@gmail.com>
 #
 # SPDX-License-Identifier: MIT
-import time
 from typing import Any, Union
-from threading import Lock, Thread
+from threading import Lock, Thread, Event
 from pathlib import Path
 import json
 
@@ -15,6 +14,7 @@ class KeiConf:
     for the developer who just wants to get going
     '''
     
+    _exit = Event
     _filepath: Path
     _json_indent: int
     _fail_on_missing_key: bool
@@ -46,6 +46,8 @@ class KeiConf:
         self._lock = Lock()
         self._file_lock = Lock()
         self._modified_lock = Lock()
+        self._watcher_lock = Lock()
+        self._exit = Event()
         
         if isinstance(filepath, str):
             self._filepath = Path(filepath)
@@ -80,7 +82,7 @@ class KeiConf:
         self.__create_config_if_not_exist()
         self.__load_config()
         
-        self._watcher = Thread(name="config_file_watcher", target=self.__watch_config)
+        
         if self._watch_for_changes:
             self.__start_watcher()
     
@@ -98,19 +100,21 @@ class KeiConf:
         
         return result
     
+    def is_watching(self) -> bool:
+        return self._watch_for_changes
+    
     def stop(self):
         '''
         Stops the config file watcher
         '''
-        if self._watcher.is_alive():
-            self.__stop_watcher()
+        self.__stop_watcher()
     
     def start(self):
         '''
         Starts the config file watcher
         '''
-        if not self._watcher.is_alive():
-            self.__start_watcher()
+        self.__create_watcher()
+        self.__start_watcher()
     
     @staticmethod
     def __gattr(d: dict, keys: list[str]) -> Any:
@@ -131,11 +135,31 @@ class KeiConf:
         except KeyError as e:
             raise KeyError(e)
     
+    def __create_watcher(self):
+        '''
+        Creates a new watcher
+        '''
+        
+        try:
+            if self._watcher.is_alive():
+                self.__stop_watcher()
+                self._watcher.join() # TODO: very quickly timeout
+            self._watcher_lock.acquire()
+            self._watcher = Thread(name="config_file_watcher", target=self.__watch_config, daemon=True)
+            self._watcher_lock.release()
+        except AttributeError:
+            self._watcher_lock.acquire()
+            self._watcher = Thread(name="config_file_watcher", target=self.__watch_config, daemon=True)
+            self._watcher_lock.release()
+        
+        
+    
     def __start_watcher(self):
         '''
         Starts the config file watcher
         '''
         self._watcher_lock.acquire()
+        self._exit.clear()
         self._watch_for_changes = True
         self._watcher.start()
         self._watcher_lock.release()
@@ -145,6 +169,7 @@ class KeiConf:
         Stops the config file watcher
         '''
         self._watcher_lock.acquire()
+        self._exit.set()
         self._watch_for_changes = False
         self._watcher_lock.release()
     
@@ -154,11 +179,9 @@ class KeiConf:
         If the load fails to read or parse it will raise a warning but preserve
         the current working configuration.
         '''
-        while True:
-            if not self._watch_for_changes:
-                break
+        while not self._exit.is_set():
             self.__check_config_for_changes()
-            time.sleep(_CHANGE_WATCH_INTERVAL)
+            self._exit.wait(_CHANGE_WATCH_INTERVAL)
         
     def __check_config_for_changes(self):
         '''
@@ -170,18 +193,6 @@ class KeiConf:
             self._last_modified = modified
             self._modified_lock.release()
             self.__load_config()
-    
-    def __set_last_modified(self, modified: float):
-        '''
-        Sets the config file last modified time thread-safely
-        '''
-        
-        if not isinstance(modified, float):
-            raise TypeError(f"expected modified to be float but got {type(modified)}: {modified}")
-        
-        self._lock.acquire()
-        self._last_modified = modified
-        self._lock.release()
     
     def __load_config(self):
         '''

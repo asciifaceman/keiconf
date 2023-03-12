@@ -9,6 +9,8 @@
 
 A small, minimalist application json configuration tool for small projects.
 
+Uses only stdlib if that matters to you.
+
 -----
 
 **Table of Contents**
@@ -69,15 +71,15 @@ KeiConf(filepath, indent=2, fail_on_missing_key=False, create_if_not_exist=False
     * if `False` will fail naturally on opening nonexistent configuration file
 * `watch_for_changes:bool`
     * if `True` will launch the config file watcher on __init__ 
-    * if `False` will create but not start the config file watcher on __init__
+    * if `False` will not launch the config file watcher on __init__
     * See [Config File Watcher](#config-file-watcher) for more information
 
 ## Config File Watcher
 If your KeiConf instance is started with `watch_for_changes=True` then a threaded file watcher will load changes to your configuration file as it sees them (within keiconf._CHANGE_WATCH_INTERVAL).
 
-If your KeiConf instance is started with `watch_for_changes=False` then the threaded file watcher is created, but not started.
+If your KeiConf instance is started with `watch_for_changes=False` then the threaded file watcher is not created automatically.
 
-You can stop and start the file watcher manually via the start() and stop() functions.
+You can stop and start the file watcher manually via the start() and stop() functions. It can be start()'ed even if you launched with watch_for_changes=False
 
 ```
 k = KeiConf(...)
