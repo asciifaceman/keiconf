@@ -2,7 +2,10 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/keiconf.svg)](https://pypi.org/project/keiconf)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/keiconf.svg)](https://pypi.org/project/keiconf)
-[![Hatch - Version](https://img.shields.io/badge/hatch-%3E1.6.3-success)](https://github.com/pypa/hatch)
+[![Hatch - Version](https://img.shields.io/badge/hatch-1.6.3-success)](https://github.com/pypa/hatch)
+
+![Repo - PRs](https://img.shields.io/github/issues-pr-raw/asciifaceman/keiconf)
+![Repo - Issues](https://img.shields.io/github/issues-raw/asciifaceman/keiconf)
 
 A small, minimalist application json configuration tool for small projects.
 
