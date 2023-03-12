@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 import logging
 from typing import Any, Union
+from types import SimpleNamespace
 from pathlib import Path
 import json
 
@@ -59,6 +60,41 @@ class KeiConf:
     
         self.__create_config_if_not_exist()
         self.__load_config()
+    
+    def get(self, keys: str) -> Any:
+        '''
+        Get the value of a key given format get("path.to.thing")
+        '''
+        if not isinstance(keys, str):
+            raise TypeError(f'expected keys to be str but got {type(keys)}: {keys}')
+        
+        if keys == "":
+            raise ValueError("keys is an empty string")
+        
+        paths = keys.split(".")
+        result = self.__class__.__gattr(self._conf, paths)
+        if result == "":
+            raise KeyError(f'key {keys} does not exist in config')
+        return result
+    
+    @staticmethod
+    def __gattr(d: dict, keys: list[str]) -> Any:
+        '''
+        Return the value of a nested dict key, using a list of keys
+        ordered by depth
+        '''
+        if not isinstance(d, dict):
+            raise TypeError(f"expected d to be dict but got {type(d)}: {d}")
+        
+        if not isinstance(keys, list):
+            raise TypeError(f"expected keys to be list[str] but got {type(keys)}: {keys}")
+        
+        try:
+            for k in keys:
+                d = d[k]
+            return d
+        except KeyError as e:
+            raise KeyError(e)
     
     def __load_config(self):
         '''

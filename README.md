@@ -17,6 +17,7 @@ A small, minimalist application json configuration tool for small projects.
 - [Installation](#installation)
 - [Usage](#usage)
 - [Development](#development)
+- [Frequently Asked Questions](#faq)
 - [License](#license)
 
 ## Why tho?
@@ -60,6 +61,11 @@ python3 -m pip install pipx
 python3 -m pipx ensurepath
 python3 -m pipx install hatch
 ```
+
+## FAQ
+
+* Why not dot notation / attribute reference?
+    * A: I looked into this as I was interested in possibly doing it, but it looked rather lengthy to implement and involved modifying the base class quite a bit or using wrappers and I just wasn't sure that was in the spirit of minimalism. The get() function uses a string dot notation `get("path.to.key")` as a sort of middle ground. --- I may revisit in the future.
 
 ## License
 
