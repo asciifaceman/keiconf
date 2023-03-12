@@ -78,44 +78,4 @@ class TestKeiConf(unittest.TestCase):
             k = KeiConf(filepath=self.file_path_mock, create_if_not_exist=True)
             mock_mkdir.assert_called_with(Path(self.file_path_mock), parents=True, exist_ok=True)
             mock_write_text.assert_called_with("{}")
-    
-            
-            
-#    @patch('pathlib.Path.mkdir', autospec=True)
-#    @patch('pathlib.Path.write_text')
-#    def test_create_config_if_not_exist(self, mock_path_mkdir, mock_path_write_text):
-#        with patch("builtins.open", mock_open(read_data=self.file_content_mock)) as mock_file:
-#            k = KeiConf(filepath=self.file_path_mock)
-#            
-#            # checks Path.is_dir
-#            # if not Path.is_file()
-#                # runs Path.mkdir 
-#                # runs Path.write_text
-#            # with open filepath
-#                # json load
-#            
-#            mock_path_mkdir.assert_called()
-#            
-#            # was mock_path_mkdir created
-#            # was mock_path_write_text written to with json
-        
-        
-
-        
-    
-#    def test_config_init_without_filename(self):
-#        with pytest.raises(ValueError):
-#            k = KeiConf()
-    
-#  
-#    @patch('pathlib.Path.mkdir')
-#    @patch('pathlib.Path.write_text')
-#    @patch('KeiConf.__load_config.open')
-#    def test_config_init_with_filename(self):
-#        file_content_mock = \"""
-#        {
-#            "a_key": "a_value",
-#        }
-#        \"""
-#        fake_file_path = 'path/to/file'
-# 
+     
