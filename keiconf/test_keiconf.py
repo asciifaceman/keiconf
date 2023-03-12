@@ -30,6 +30,7 @@ class TestKeiConf(unittest.TestCase):
     }
     """
     file_path_mock = '/fake/path/to/file.json'
+    file_dir_mock = '/fake/path/to'
     
     # these should be configured to fail after the test
     # in case it somehow doesn't raise 
@@ -76,6 +77,6 @@ class TestKeiConf(unittest.TestCase):
         
         with patch("keiconf.open", mock_open(read_data=self.file_content_mock)) as mock_file:
             k = KeiConf(filepath=self.file_path_mock, create_if_not_exist=True)
-            mock_mkdir.assert_called_with(Path(self.file_path_mock), parents=True, exist_ok=True)
+            mock_mkdir.assert_called_with(Path(self.file_dir_mock), parents=True, exist_ok=True)
             mock_write_text.assert_called_with("{}")
      

@@ -65,7 +65,7 @@ class KeiConf:
         Read the configfile into memory
         '''
         with open(self._filepath, 'r') as file:
-            self.__conf = json.load(file)
+            self._conf = json.load(file)
         
     def __create_config_if_not_exist(self):
         '''
@@ -74,16 +74,17 @@ class KeiConf:
         '''
         
         if self._create_if_not_exist and not self._filepath.is_file():
-            self._filepath.mkdir(parents=True, exist_ok=True)
+            self._filepath.parents[0].mkdir(parents=True, exist_ok=True)
             self.__write()
     
     def __write(self):
         '''
         Write KeiConf config file to disk
         '''
-        self._filepath.write_text(json.dumps(self._conf, indent=self._json_indent))
+        #self._filepath.write_text(json.dumps(self._conf, indent=self._json_indent))
+        self._filepath.write_text(str(self))
     
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return json.dumps(self._conf, indent=self._json_indent)
     
     @staticmethod
