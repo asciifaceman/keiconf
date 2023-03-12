@@ -15,6 +15,8 @@ A small, minimalist application json configuration tool for small projects.
 
 - [Why tho?](#why-tho)
 - [Installation](#installation)
+- [Usage](#usage)
+- [Development](#development)
 - [License](#license)
 
 ## Why tho?
@@ -30,6 +32,18 @@ This project isn't meant to be a fully featured configuration system to slap int
 
 ```console
 pip install keiconf
+```
+
+## Usage
+
+Coming Soon
+
+```
+from keiconf import KeiConf
+
+k = KeiConf(filepath="path/to/file.json")
+
+
 ```
 
 ## Development
