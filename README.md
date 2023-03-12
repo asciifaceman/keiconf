@@ -16,7 +16,9 @@ A small, minimalist application json configuration tool for small projects.
 - [Why tho?](#why-tho)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Parameters](#params)
 - [Development](#development)
+- [Limitations](#limitations)
 - [Frequently Asked Questions](#faq)
 - [License](#license)
 
@@ -37,15 +39,53 @@ pip install keiconf
 
 ## Usage
 
-Coming Soon
-
 ```
 from keiconf import KeiConf
 
 k = KeiConf(filepath="path/to/file.json")
-
+k.get("your_key")
+k.get("path.to.your.nested_key")
+k.start() # start watching config file for changes
 
 ```
+
+## Params
+
+```
+KeiConf(filepath, indent=2, fail_on_missing_key=False, create_if_not_exist=False, watch_for_changes=False)
+```
+
+* `filepath:str`
+    * The path to your target configuration file
+    * ex. `/path/to/file.json`
+* `indent:int`
+    * The json indentation to use for the written file
+    * ex. `2`
+* `fail_on_missing_keys:bool`
+    * If `True`, will raise a KeyError if a key is missing, which you can catch and exit on.
+    * If `False`, will return nothing
+* `create_if_not_exist:bool`
+    * if `True`, will create the missing path directories and empty configuration file if it does not exist
+    * if `False` will fail naturally on opening nonexistent configuration file
+* `watch_for_changes:bool`
+    * if `True` will launch the config file watcher on __init__ 
+    * if `False` will create but not start the config file watcher on __init__
+    * See [Config File Watcher](#config-file-watcher) for more information
+
+## Config File Watcher
+If your KeiConf instance is started with `watch_for_changes=True` then a threaded file watcher will load changes to your configuration file as it sees them (within keiconf._CHANGE_WATCH_INTERVAL).
+
+If your KeiConf instance is started with `watch_for_changes=False` then the threaded file watcher is created, but not started.
+
+You can stop and start the file watcher manually via the start() and stop() functions.
+
+```
+k = KeiConf(...)
+k.start() # starts the file watcher if it isn't already
+k.stop() # stops a running file watcher if it is running
+```
+
+The file watcher and loader is protected by a `threading.Lock()`
 
 ## Development
 Development/Testing/Contribution requires hatch. Hatch provides the project management, environment abstraction, dependency resolution, and dev/test entrypoints. 
@@ -61,6 +101,9 @@ python3 -m pip install pipx
 python3 -m pipx ensurepath
 python3 -m pipx install hatch
 ```
+
+## Limitations
+* Need to investigate behavior with lists
 
 ## FAQ
 

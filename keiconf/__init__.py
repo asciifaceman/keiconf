@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: 2023-present Charles C. <nafredy@gmail.com>
 #
 # SPDX-License-Identifier: MIT
-import logging
+import time
 from typing import Any, Union
-from types import SimpleNamespace
+from threading import Lock, Thread
 from pathlib import Path
 import json
+
+_CHANGE_WATCH_INTERVAL=1
 
 class KeiConf:
     '''
@@ -17,10 +19,18 @@ class KeiConf:
     _json_indent: int
     _fail_on_missing_key: bool
     _create_if_not_exist: bool
+    _watch_for_changes: bool
+    _watcher: Thread
     _conf = {}
+    _last_modified: float
+    _lock: Lock # locks the _conf
+    _file_lock: Lock # locks the _filepath
+    _modified_lock: Lock # locks the _last_modified
+    _watcher_lock: Lock # locks the watcher and watch bool
     
     def __init__(self, filepath: Union[str, Path], indent: int = 2, \
-                fail_on_missing_key: bool = True, create_if_not_exist: bool = False):
+                fail_on_missing_key: bool = False, create_if_not_exist: bool = False, \
+                watch_for_changes: bool = False):
         '''
         Initialize the configuration interface
         
@@ -33,6 +43,9 @@ class KeiConf:
         :raises TypeError: if the fail_on_missing_key is not bool
         :rasised TypeError: if the create_if_not_exist is not bool
         '''
+        self._lock = Lock()
+        self._file_lock = Lock()
+        self._modified_lock = Lock()
         
         if isinstance(filepath, str):
             self._filepath = Path(filepath)
@@ -58,8 +71,18 @@ class KeiConf:
         else:
             raise TypeError(f'expected create_if_not_exist to be (bool), got {type(create_if_not_exist)}')
     
+
+        if isinstance(watch_for_changes, bool):
+            self._watch_for_changes = watch_for_changes
+        else:
+            raise TypeError(f'expected watch_for_changes to be (bool), got {type(watch_for_changes)}')
+    
         self.__create_config_if_not_exist()
         self.__load_config()
+        
+        self._watcher = Thread(name="config_file_watcher", target=self.__watch_config)
+        if self._watch_for_changes:
+            self.__start_watcher()
     
     def get(self, keys: str) -> Any:
         '''
@@ -68,14 +91,26 @@ class KeiConf:
         if not isinstance(keys, str):
             raise TypeError(f'expected keys to be str but got {type(keys)}: {keys}')
         
-        if keys == "":
-            raise ValueError("keys is an empty string")
-        
         paths = keys.split(".")
         result = self.__class__.__gattr(self._conf, paths)
-        if result == "":
+        if result == "" and self._fail_on_missing_key:
             raise KeyError(f'key {keys} does not exist in config')
+        
         return result
+    
+    def stop(self):
+        '''
+        Stops the config file watcher
+        '''
+        if self._watcher.is_alive():
+            self.__stop_watcher()
+    
+    def start(self):
+        '''
+        Starts the config file watcher
+        '''
+        if not self._watcher.is_alive():
+            self.__start_watcher()
     
     @staticmethod
     def __gattr(d: dict, keys: list[str]) -> Any:
@@ -96,12 +131,70 @@ class KeiConf:
         except KeyError as e:
             raise KeyError(e)
     
+    def __start_watcher(self):
+        '''
+        Starts the config file watcher
+        '''
+        self._watcher_lock.acquire()
+        self._watch_for_changes = True
+        self._watcher.start()
+        self._watcher_lock.release()
+    
+    def __stop_watcher(self):
+        '''
+        Stops the config file watcher
+        '''
+        self._watcher_lock.acquire()
+        self._watch_for_changes = False
+        self._watcher_lock.release()
+    
+    def __watch_config(self):
+        '''
+        Watches the given config file for changes and automatically loads them
+        If the load fails to read or parse it will raise a warning but preserve
+        the current working configuration.
+        '''
+        while True:
+            if not self._watch_for_changes:
+                break
+            self.__check_config_for_changes()
+            time.sleep(_CHANGE_WATCH_INTERVAL)
+        
+    def __check_config_for_changes(self):
+        '''
+        Naive check if the file has been modified and loads it if it has
+        '''
+        modified = self._filepath.lstat().st_mtime
+        if modified != self._last_modified:
+            self._modified_lock.acquire()
+            self._last_modified = modified
+            self._modified_lock.release()
+            self.__load_config()
+    
+    def __set_last_modified(self, modified: float):
+        '''
+        Sets the config file last modified time thread-safely
+        '''
+        
+        if not isinstance(modified, float):
+            raise TypeError(f"expected modified to be float but got {type(modified)}: {modified}")
+        
+        self._lock.acquire()
+        self._last_modified = modified
+        self._lock.release()
+    
     def __load_config(self):
         '''
         Read the configfile into memory
         '''
+        self._file_lock.acquire()
+        self._lock.acquire()
         with open(self._filepath, 'r') as file:
             self._conf = json.load(file)
+        self._file_lock.release()
+        self._lock.release()
+        
+        self.__set_last_modified()
         
     def __create_config_if_not_exist(self):
         '''
@@ -110,15 +203,34 @@ class KeiConf:
         '''
         
         if self._create_if_not_exist and not self._filepath.is_file():
-            self._filepath.parents[0].mkdir(parents=True, exist_ok=True)
+            self.__create_config_directory()
             self.__write()
+    
+    def __set_last_modified(self):
+        '''
+        Update the last modified of the config file
+        '''
+        self._modified_lock.acquire()
+        self._last_modified = self._filepath.lstat().st_mtime
+        self._modified_lock.release()
+    
+    def __create_config_directory(self):
+        '''
+        creates the config path directories
+        '''
+        self._file_lock.acquire()
+        self._filepath.parents[0].mkdir(parents=True, exist_ok=True)
+        self._file_lock.release()
     
     def __write(self):
         '''
         Write KeiConf config file to disk
         '''
-        #self._filepath.write_text(json.dumps(self._conf, indent=self._json_indent))
+        self._file_lock.acquire()
         self._filepath.write_text(str(self))
+        self._file_lock.release()
+        
+        self.__set_last_modified()
     
     def __str__(self) -> str:
         return json.dumps(self._conf, indent=self._json_indent)
