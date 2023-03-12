@@ -6,11 +6,11 @@ build-backend = "hatchling.build"
 name = "keiconf"
 description = ''
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = "MIT"
 keywords = []
 authors = [
-  { name = "U.N. Owen", email = "void@some.where" },
+  { name = "Charles C.", email = "nafredy@gmail.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -27,15 +27,16 @@ dependencies = []
 dynamic = ["version"]
 
 [project.urls]
-Documentation = "https://github.com/unknown/keiconf#readme"
-Issues = "https://github.com/unknown/keiconf/issues"
-Source = "https://github.com/unknown/keiconf"
+Documentation = "https://github.com/asciifaceman/keiconf#readme"
+Issues = "https://github.com/asciifaceman/keiconf/issues"
+Source = "https://github.com/asciifaceman/keiconf"
 
 [tool.hatch.version]
 path = "keiconf/__about__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
+  "appdirs",
   "pytest",
   "pytest-cov",
 ]
