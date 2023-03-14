@@ -7,6 +7,8 @@
 ![Repo - PRs](https://img.shields.io/github/issues-pr-raw/asciifaceman/keiconf)
 ![Repo - Issues](https://img.shields.io/github/issues-raw/asciifaceman/keiconf)
 
+![keiconf](static/logo.png)
+
 A small, minimalist application json configuration tool for small projects.
 
 Uses only stdlib if that matters to you.
